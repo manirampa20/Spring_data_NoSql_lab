@@ -45,28 +45,54 @@ public class DoctorController {
         return doctor != null ? ResponseEntity.ok(doctor) : ResponseEntity.notFound().build();
     }
 
-    // Get all doctors
+//     Get all doctors
     @GetMapping
     public ResponseEntity<List<Doctor>> getAllDoctors() {
-        // Fetch all doctors from the database
-        List<Doctor> doctors = doctorService.getAllDoctors();
+
+        List<Doctor> doctors = doctorRedisService.getAllDoctors();
+
+        if(doctors.isEmpty()) {
+            doctors = doctorService.getAllDoctors();
+
+            for (Doctor doctor : doctors) {
+                doctorRedisService.setDoctor("doctor:" + doctor.getEmNo(), doctor);
+            }
+        }
         return ResponseEntity.ok(doctors);
-    }
+
+        }
+
+
+
+
+
+    // Fetch all doctors from the database
+//        List<Doctor> doctors = doctorService.getAllDoctors();
+//        return ResponseEntity.ok(doctors);
+
 
     // Update an existing doctor
     @PutMapping("/{id}")
-    public ResponseEntity<Doctor> updateDoctor(@PathVariable String id, @RequestBody Doctor doctorDetails) {
-        // Update the doctor in the database
-        Doctor updatedDoctor = doctorService.updateDoctor(id, doctorDetails);
-        if (updatedDoctor != null) {
-            // Update the cache in Redis
-            doctorRedisService.setDoctor("doctor:" + id, updatedDoctor);
-
-            return ResponseEntity.ok(updatedDoctor);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Doctor> updateDoctor(@PathVariable String id, @RequestBody Doctor doctorDetails){
+        Doctor updateDoctor = doctorService.updateDoctor(id, doctorDetails);
+        doctorRedisService.updateDoctor("doctor:" +id, updateDoctor);
+        return ResponseEntity.ok(updateDoctor);
     }
+
+
+
+//    public ResponseEntity<Doctor> updateDoctor(@PathVariable String id, @RequestBody Doctor doctorDetails) {
+//        // Update the doctor in the database
+//        Doctor updatedDoctor = doctorService.updateDoctor(id, doctorDetails);
+//        if (updatedDoctor != null) {
+//            // Update the cache in Redis
+//            doctorRedisService.setDoctor("doctor:" + id, updatedDoctor);
+//
+//            return ResponseEntity.ok(updatedDoctor);
+//        } else {
+//            return ResponseEntity.notFound().build();
+//        }
+//    }
 
     // Delete a doctor by ID
     @DeleteMapping("/{id}")
